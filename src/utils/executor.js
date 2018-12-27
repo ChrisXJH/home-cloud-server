@@ -7,23 +7,26 @@ const CommandExecutor = (() => {
   const scriptsPath = config.scriptsPath;
   let processes = [];
 
-  function executeScript(script, args) {
-    const argsStr = args ? args.reduce((acc, curr) => acc + ' ' + curr) : '';
-    const proc = exec(
-      'sh ' + scriptsPath + '/' + script + ' ' + argsStr,
-      (stderr, stdout) => {
+  function execute(cmd) {
+    return new Promise((resolve, reject) => {
+      const proc = exec(cmd, (stderr, stdout) => {
         if (stderr) {
-          console.error(stderr);
+          reject(stderr);
         }
-        console.log(stdout);
+        resolve(stdout);
         processes = processes.filter(p => proc.pid !== p.pid);
-      }
-    );
-    processes.push(proc);
-    return proc;
+      });
+      processes.push(proc);
+    });
   }
 
-  return { executeScript };
+  function executeScript(script, args) {
+    const argsStr = args ? args.reduce((acc, curr) => acc + ' ' + curr) : '';
+    const cmd = 'sh ' + scriptsPath + '/' + script + ' ' + argsStr;
+    return execute(cmd);
+  }
+
+  return { execute, executeScript };
 })();
 
 module.exports = { CommandExecutor };
