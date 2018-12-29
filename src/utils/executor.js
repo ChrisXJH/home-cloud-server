@@ -1,6 +1,4 @@
 const CommandExecutor = (() => {
-  'use strict';
-
   const exec = require('child_process').exec;
   const config = require('../config.js');
 
@@ -12,6 +10,7 @@ const CommandExecutor = (() => {
       const proc = exec(cmd, (stderr, stdout) => {
         if (stderr) {
           reject(stderr);
+          return;
         }
         resolve(stdout);
         processes = processes.filter(p => proc.pid !== p.pid);

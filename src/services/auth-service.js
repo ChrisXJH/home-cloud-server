@@ -8,19 +8,21 @@ module.exports = (() => {
       console.log('Authenticating user...');
       console.log('Making request to', path);
       request(path, function(error, response) {
-        if (
-          !error &&
-          response &&
-          response.statusCode >= 200 &&
-          response.statusCode < 300
-        ) {
-          console.log('Authentication completed.');
-          resolve();
-        } else {
-          console.log('response status:', response.statusCode);
-          console.error(error);
+        if (error) {
+          console.error('Failed to authenticate user.', error);
           reject();
+          return;
         }
+        const { statusCode } = response;
+        if (statusCode >= 200 && statusCode < 300) {
+          console.error(
+            `Failed to authenticate user. Unexpected response status: ${statusCode}`
+          );
+          reject();
+          return;
+        }
+        console.log('Authentication completed.');
+        resolve();
       });
     });
   }

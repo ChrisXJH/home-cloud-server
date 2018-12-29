@@ -9,7 +9,7 @@ const app = express();
 
 app.use(bodyParser.json());
 
-app.get('/', (req, res) => res.send('Server is running...'));
+app.get('/', logRequest, (req, res) => res.send('Server is running...'));
 
 app.get('/storage', logRequest, authenticateUser, (req, res) => {
   handleListStorageRequest(req, res);
@@ -69,10 +69,8 @@ app.listen(port, () => console.log(`Example app listening on port ${port}!`));
 
 function logRequest(req, res, next) {
   console.log('Handling incomming http request...');
-  console.log('Headers:', req.headers);
-  console.log('Queries:', req.query);
-  console.log('Params:', req.params);
-  console.log('Body:', req.body);
+  const { headers, query, params, body } = req;
+  console.log({ headers, query, params, body });
   next();
 }
 
@@ -80,6 +78,8 @@ function authenticateUser(req, res, next) {
   const bearerToken = req.headers.authorization;
   if (!bearerToken) {
     res.status(403).end();
+    console.log('Failed to authenticate user. No authorization token present.');
+    return;
   }
   const authToken = bearerToken.replace(/Bearer /, '');
   AuthService.authenticateToken(authToken)
@@ -170,7 +170,7 @@ function getGenericMediaTypeByExtension(extStr) {
 
 function listAllFilesInStorage(extensions = []) {
   const storageDir = config.storageDirectory;
-  return CommandExecutor.execute(`cd ${storageDir} && ls -m *.*`).then(result =>
+  return CommandExecutor.execute(`cd ${storageDir} && ls -m`).then(result =>
     result
       .replace(/\n/, '')
       .split(', ')
