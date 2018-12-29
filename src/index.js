@@ -1,9 +1,8 @@
-'use strict';
-
 const express = require('express');
 const fs = require('fs');
 const { CommandExecutor } = require('./utils/executor.js');
 const bodyParser = require('body-parser');
+const AuthService = require('./services/auth-service.js');
 const config = require('./config.js');
 const { port } = config;
 const app = express();
@@ -12,19 +11,19 @@ app.use(bodyParser.json());
 
 app.get('/', (req, res) => res.send('Server is running...'));
 
-app.get('/storage', (req, res) => {
+app.get('/storage', logRequest, authenticateUser, (req, res) => {
   handleListStorageRequest(req, res);
 });
 
-app.get('/storage/videos', (req, res) => {
+app.get('/storage/videos', logRequest, authenticateUser, (req, res) => {
   handleListStorageRequest(req, res, [/.*\.mp4/, /.*\.avi/]);
 });
 
-app.get('/storage/audios', (req, res) => {
+app.get('/storage/audios', logRequest, authenticateUser, (req, res) => {
   handleListStorageRequest(req, res, [/.*\.mp3/]);
 });
 
-app.get('/storage/:filename', (req, res) => {
+app.get('/storage/:filename', logRequest, authenticateUser, (req, res) => {
   const extension = getExtensionByFilename(req.params.filename);
   const genericMediaType = getGenericMediaTypeByExtension(extension);
   if (genericMediaType === 'video' || genericMediaType === 'audio') {
@@ -36,17 +35,27 @@ app.get('/storage/:filename', (req, res) => {
   }
 });
 
-app.get('/storage/videos/:filename', (req, res) => {
-  const extension = getExtensionByFilename(req.params.filename);
-  handleMediaStreamingRequest(req, res, `video/${extension}`);
-});
+app.get(
+  '/storage/videos/:filename',
+  logRequest,
+  authenticateUser,
+  (req, res) => {
+    const extension = getExtensionByFilename(req.params.filename);
+    handleMediaStreamingRequest(req, res, `video/${extension}`);
+  }
+);
 
-app.get('/storage/audios/:filename', (req, res) => {
-  const extension = getExtensionByFilename(req.params.filename);
-  handleMediaStreamingRequest(req, res, `audio/${extension}`);
-});
+app.get(
+  '/storage/audios/:filename',
+  logRequest,
+  authenticateUser,
+  (req, res) => {
+    const extension = getExtensionByFilename(req.params.filename);
+    handleMediaStreamingRequest(req, res, `audio/${extension}`);
+  }
+);
 
-app.post('/storage', (req, res) => {
+app.post('/storage', logRequest, authenticateUser, (req, res) => {
   const { targetUrl } = req.body;
   const directory = config.downloadDirectory;
   const params = ["'" + targetUrl + "'", directory];
@@ -57,6 +66,26 @@ app.post('/storage', (req, res) => {
 });
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`));
+
+function logRequest(req, res, next) {
+  console.log('Handling incomming http request...');
+  console.log('Headers:', req.headers);
+  console.log('Queries:', req.query);
+  console.log('Params:', req.params);
+  console.log('Body:', req.body);
+  next();
+}
+
+function authenticateUser(req, res, next) {
+  const bearerToken = req.headers.authorization;
+  if (!bearerToken) {
+    res.status(403).end();
+  }
+  const authToken = bearerToken.replace(/Bearer /, '');
+  AuthService.authenticateToken(authToken)
+    .then(next)
+    .catch(() => res.status(403).end());
+}
 
 function handleGetFileRequest(req, res, mediaType) {
   const path = getActualFilePath(req.params.filename);
