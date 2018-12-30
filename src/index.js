@@ -172,14 +172,14 @@ function getGenericMediaTypeByExtension(extStr) {
 
 function listAllFilesInStorage(extensions = []) {
   const storageDir = config.storageDirectory;
-  return CommandExecutor.execute(`cd ${storageDir} && ls -m`).then(result =>
+  return CommandExecutor.execute(`cd ${storageDir} && ls -1`).then(result =>
     result
-      .replace(/\n/g, '')
-      .split(', ')
+      .split('\n')
       .filter(
         filename =>
-          extensions.length <= 0 ||
-          extensions.some(regex => filename.match(regex))
+          filename !== '' &&
+          (extensions.length <= 0 ||
+            extensions.some(regex => filename.match(regex)))
       )
   );
 }
