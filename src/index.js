@@ -174,7 +174,7 @@ function listAllFilesInStorage(extensions = []) {
   const storageDir = config.storageDirectory;
   return CommandExecutor.execute(`cd ${storageDir} && ls -m`).then(result =>
     result
-      .replace(/\n/, '')
+      .replace(/\n/g, '')
       .split(', ')
       .filter(
         filename =>
