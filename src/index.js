@@ -75,13 +75,15 @@ function logRequest(req, res, next) {
 }
 
 function authenticateUser(req, res, next) {
-  const bearerToken = req.headers.authorization;
-  if (!bearerToken) {
+  const authToken = req.headers.authorization
+    ? req.headers.authorization.replace(/Bearer /, '')
+    : req.query.accessToken;
+
+  if (!authToken) {
     res.status(403).end();
     console.log('Failed to authenticate user. No authorization token present.');
     return;
   }
-  const authToken = bearerToken.replace(/Bearer /, '');
   AuthService.authenticateToken(authToken)
     .then(next)
     .catch(() => res.status(403).end());

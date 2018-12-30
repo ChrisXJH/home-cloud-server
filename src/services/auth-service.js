@@ -14,7 +14,7 @@ module.exports = (() => {
           return;
         }
         const { statusCode } = response;
-        if (statusCode >= 200 && statusCode < 300) {
+        if (statusCode < 200 || statusCode >= 300) {
           console.error(
             `Failed to authenticate user. Unexpected response status: ${statusCode}`
           );
