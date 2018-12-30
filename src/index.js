@@ -189,6 +189,7 @@ function getActualFilePath(filename) {
 }
 
 function getExtensionByFilename(filename) {
-  const extension = filename.match(/\..*/)[0];
+  const parts = filename.split('.');
+  const extension = parts[parts.length - 1];
   return extension ? extension.replace('.', '') : '';
 }
